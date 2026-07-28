@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+frontend/out/
+
+# Env
+.env
+.env.local
+
+# Storage / runtime data
+backend/storage/
+storage/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local tool state (not part of this project)
+.claude/
+.claude-flow/
