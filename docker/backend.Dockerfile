@@ -21,4 +21,9 @@ RUN mkdir -p /app/storage
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default CMD is the web process (migrates then serves) and honors $PORT for
+# platforms that assign it dynamically (Railway/Render). The Celery worker is
+# deployed from this same image with its start command overridden to
+# `celery -A app.workers.celery_app worker --loglevel=info --pool=solo` —
+# see docs/DEPLOYMENT.md.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
