@@ -31,6 +31,18 @@ def upgrade() -> None:
     chunk_type.create(bind, checkfirst=True)
     message_role.create(bind, checkfirst=True)
 
+    # Reused below as column types with create_type=False: the types were just
+    # created explicitly above (checkfirst=True, safe to rerun), so column
+    # definitions must not let SQLAlchemy's own before_create hook try to
+    # CREATE TYPE a second time during create_table (that second attempt has
+    # no checkfirst and fails with "already exists").
+    document_status_col = postgresql.ENUM(
+        "queued", "validating", "extracting", "ocr", "chunking", "embedding", "done", "failed",
+        name="document_status", create_type=False,
+    )
+    chunk_type_col = postgresql.ENUM("text", "table", "figure", name="chunk_type", create_type=False)
+    message_role_col = postgresql.ENUM("user", "assistant", name="message_role", create_type=False)
+
     op.create_table(
         "users",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
@@ -52,7 +64,7 @@ def upgrade() -> None:
         sa.Column("file_hash", sa.String(64), nullable=False),
         sa.Column("file_size_bytes", sa.BigInteger(), server_default="0"),
         sa.Column("page_count", sa.Integer(), server_default="0"),
-        sa.Column("status", document_status, server_default="queued"),
+        sa.Column("status", document_status_col, server_default="queued"),
         sa.Column("status_detail", sa.Text(), nullable=True),
         sa.Column("progress_percent", sa.Integer(), server_default="0"),
         sa.Column("chunk_count", sa.Integer(), server_default="0"),
@@ -69,7 +81,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("document_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("documents.id", ondelete="CASCADE")),
         sa.Column("parent_chunk_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("chunks.id", ondelete="SET NULL"), nullable=True),
-        sa.Column("chunk_type", chunk_type, server_default="text"),
+        sa.Column("chunk_type", chunk_type_col, server_default="text"),
         sa.Column("text", sa.Text(), nullable=False),
         sa.Column("page_number", sa.Integer(), nullable=False),
         sa.Column("section_title", sa.String(512), nullable=True),
@@ -96,7 +108,7 @@ def upgrade() -> None:
         "messages",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("conversation_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("conversations.id", ondelete="CASCADE")),
-        sa.Column("role", message_role, nullable=False),
+        sa.Column("role", message_role_col, nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("confidence_score", sa.Float(), nullable=True),
         sa.Column("prompt_tokens", sa.Integer(), server_default="0"),
