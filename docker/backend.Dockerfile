@@ -21,9 +21,12 @@ RUN mkdir -p /app/storage
 
 EXPOSE 8000
 
-# Default CMD is the web process (migrates then serves) and honors $PORT for
-# platforms that assign it dynamically (Railway/Render). The Celery worker is
-# deployed from this same image with its start command overridden to
-# `celery -A app.workers.celery_app worker --loglevel=info --pool=solo` —
-# see docs/DEPLOYMENT.md.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Default CMD runs the web process AND a Celery worker in the same container,
+# sharing this container's local disk — required on single-service platforms
+# (Railway without a shared volume across services) where the pipeline's
+# uploaded-file storage isn't visible across separate containers. For
+# docker-compose, this default is irrelevant: both the `backend` and
+# `celery-worker` services override `command:` explicitly and use a shared
+# named volume instead, so they still run as properly separate, independently
+# scalable processes there. See docs/DEPLOYMENT.md.
+CMD ["sh", "-c", "alembic upgrade head && celery -A app.workers.celery_app worker --loglevel=info --pool=solo & exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -23,12 +23,8 @@ This is the fastest path to a live URL without managing servers. You need accoun
    ```
    (Railway auto-injects `PORT`; the Dockerfile's CMD already binds to it.)
 5. **Vector store — Qdrant Cloud**: Railway has no native Qdrant plugin. Create a free cluster at [cloud.qdrant.io](https://cloud.qdrant.io), copy its URL and API key into `QDRANT_URL`/`QDRANT_API_KEY` above. (Alternative: `+ New → Empty Service → Deploy from Docker Image` with image `qdrant/qdrant:v1.12.4` and a mounted volume, self-hosted on Railway instead.)
-6. **Add the worker**: `+ New → GitHub Repo` again, same repo. In this second service's **Settings → Deploy**, set **Custom Start Command** to:
-   ```
-   celery -A app.workers.celery_app worker --loglevel=info --pool=solo
-   ```
-   Copy the *same* environment variables from step 4 onto this service too (backend and worker both need DB/Redis/Qdrant access; the worker does not need `CORS_ORIGINS`).
-7. Deploy. Check the backend service's public URL + `/health`, and `/docs` for the Swagger UI. Watch the worker's logs when you upload a test document.
+6. **No separate worker service on Railway.** Uploaded files are saved to local disk (`app/services/pdf_processing/storage.py`), and Railway does not give two separate services a shared filesystem the way docker-compose's named volume does — a standalone worker service literally cannot see files the backend saved, and every upload would fail at the processing step with a "No such file or directory" error. Instead, `docker/backend.Dockerfile`'s default `CMD` runs **both** uvicorn and a Celery worker in the same container, sharing its disk. Do not create a second service for the worker; the one backend service handles both. (If you previously created one, delete it or leave it stopped — a redundant worker pointed at a different container's empty disk will intermittently fail any task it happens to pick up.) The real fix for independently-scalable worker/web processes on Railway is swapping local disk for S3-compatible object storage in `storage.py` — a Phase 2 task.
+7. Deploy. Check the backend service's public URL + `/health`, and `/docs` for the Swagger UI. Watch its logs for both `Uvicorn running on ...` and `celery@... ready` when you upload a test document.
 
 ### 2. Vercel — frontend
 
