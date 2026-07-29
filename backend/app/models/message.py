@@ -19,7 +19,9 @@ class Message(Base, UUIDPKMixin, TimestampMixin):
     conversation_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE")
     )
-    role: Mapped[MessageRole] = mapped_column(Enum(MessageRole, name="message_role"))
+    role: Mapped[MessageRole] = mapped_column(
+        Enum(MessageRole, name="message_role", values_callable=lambda enum_cls: [e.value for e in enum_cls])
+    )
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     confidence_score: Mapped[float] = mapped_column(Float, nullable=True)

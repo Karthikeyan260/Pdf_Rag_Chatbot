@@ -30,7 +30,8 @@ class Document(Base, UUIDPKMixin, TimestampMixin):
     page_count: Mapped[int] = mapped_column(Integer, default=0)
 
     status: Mapped[DocumentStatus] = mapped_column(
-        Enum(DocumentStatus, name="document_status"), default=DocumentStatus.QUEUED
+        Enum(DocumentStatus, name="document_status", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        default=DocumentStatus.QUEUED,
     )
     status_detail: Mapped[str] = mapped_column(Text, nullable=True)
     progress_percent: Mapped[int] = mapped_column(Integer, default=0)

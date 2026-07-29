@@ -22,7 +22,10 @@ class Chunk(Base, UUIDPKMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("chunks.id", ondelete="SET NULL"), nullable=True
     )
 
-    chunk_type: Mapped[ChunkType] = mapped_column(Enum(ChunkType, name="chunk_type"), default=ChunkType.TEXT)
+    chunk_type: Mapped[ChunkType] = mapped_column(
+        Enum(ChunkType, name="chunk_type", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        default=ChunkType.TEXT,
+    )
     text: Mapped[str] = mapped_column(Text, nullable=False)
     page_number: Mapped[int] = mapped_column(Integer, nullable=False)
     section_title: Mapped[str] = mapped_column(String(512), nullable=True)
