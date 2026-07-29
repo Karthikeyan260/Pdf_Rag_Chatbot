@@ -104,3 +104,4 @@ Deferred deliberately to keep Phase 1 shippable and reviewable: AI summaries (ex
 - BM25 is rebuilt from the DB per chat request, scoped to the conversation's document(s) — fine at MVP scale; a persistent sparse index is the scale-up path.
 - Celery tasks run their own event loop per task; the vector-store client is instantiated fresh per pipeline run rather than reusing the FastAPI-side singleton, to avoid reusing an httpx-based async client across event loops (see the comment in `app/services/pdf_processing/pipeline.py`).
 - No virus-scanning hook is wired to a real scanner — `validator.py` is the integration point for one.
+
