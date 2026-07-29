@@ -56,6 +56,8 @@ class QdrantVectorStore(BaseVectorStore):
         ]
 
     async def delete_document(self, document_id: str) -> None:
+        if not await self._client.collection_exists(self._collection):
+            return
         await self._client.delete(
             collection_name=self._collection,
             points_selector=models.FilterSelector(
